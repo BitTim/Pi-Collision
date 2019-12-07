@@ -29,4 +29,26 @@ struct Vec2f
   }
 };
 
+SDL_Rect iSDL_Rect(int x, int y, int w, int h)
+{
+  SDL_Rect r;
+  r.x = x;
+  r.y = y;
+  r.w = w;
+  r.h = h;
+
+  return r;
+}
+
+SDL_Color iSDL_Color(int r, int g, int b, int a)
+{
+  SDL_Color c;
+  c.r = r;
+  c.g = g;
+  c.b = b;
+  c.a = a;
+
+  return c;
+}
+
 #endif // DATATYPES_HH
