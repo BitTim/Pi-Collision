@@ -31,10 +31,12 @@ Block smallMass;
 Block bigMass;
 
 int collisions = 0;
-float tmp_pos_x = 0.0f;
+double tmp_pos_x = 0.0f;
 
 bool pi_mode;
 char tmp_str[64];
+
+int timeSteps;
 
 // m/s = 100px / 100u
 
@@ -42,7 +44,7 @@ char tmp_str[64];
 // Utility functions
 //================================
 
-void init(long int arg, float speed)
+void init(long int arg, double speed, int steps)
 {
   SDL_Init(SDL_INIT_EVERYTHING);
   window = SDL_CreateWindow("PI Collision", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, _SCREENRES.x, _SCREENRES.y, _FULLSCREEN ? SDL_WINDOW_FULLSCREEN : 0);
@@ -55,9 +57,11 @@ void init(long int arg, float speed)
   SDL_RenderClear(renderer);
   SDL_RenderPresent(renderer);
 
-  smallMass = Block(1, Vec2f(_SCREENRES.x / 3, _SCREENRES.y - 96), Vec2(96, 96));
-  bigMass = Block(pi_mode ? pow(100, arg) : arg, Vec2f(_SCREENRES.x - _SCREENRES.x / 3, _SCREENRES.y - 128), Vec2(128, 128));
-  bigMass.speed = -speed; //Speed m/s
+  timeSteps = steps;
+
+  smallMass = Block(1, Vec2d(_SCREENRES.x / 3, _SCREENRES.y - 96), Vec2(96, 96));
+  bigMass = Block(pi_mode ? pow(100, arg) : arg, Vec2d(_SCREENRES.x - _SCREENRES.x / 3, _SCREENRES.y - 128), Vec2(128, 128));
+  bigMass.speed = -speed / timeSteps; //Speed m/s
   tmp_pos_x = bigMass.pos.x;
 
   fg.r = 0xff;
@@ -103,47 +107,50 @@ void update()
   SDL_DestroyTexture(collisionCounter);
   SDL_DestroyTexture(distanceText);
 
-  if(smallMass.pos.x <= 0)
+  for(int i = 0; i < timeSteps; i++)
   {
-    collisions++;
-    smallMass.speed *= -1;
-  }
+    if(smallMass.pos.x <= 0)
+    {
+      collisions++;
+      smallMass.speed *= -1;
+    }
 
-  if(bigMass.pos.x <= smallMass.pos.x + smallMass.size.x)
-  {
-    collisions++;
+    if(bigMass.pos.x <= smallMass.pos.x + smallMass.size.x)
+    {
+      collisions++;
 
-    //Conservation of Momentum (Impulserhaltung) pVor = pNach <=> m1 * v1 + m2 * v2 = m1 * u1 + m2 * u2
-    float v1 = smallMass.speed;
-    float v2 = bigMass.speed;
+      //Conservation of Momentum (Impulserhaltung) pVor = pNach <=> m1 * v1 + m2 * v2 = m1 * u1 + m2 * u2
+      double v1 = smallMass.speed;
+      double v2 = bigMass.speed;
 
-    smallMass.speed = (smallMass.mass * v1 + bigMass.mass * (2 * v2 - v1)) / (smallMass.mass + bigMass.mass);
-    bigMass.speed = (bigMass.mass * v2 + smallMass.mass * (2 * v1 - v2)) / (smallMass.mass + bigMass.mass);
-  }
+      smallMass.speed = (smallMass.mass * v1 + bigMass.mass * (2 * v2 - v1)) / (smallMass.mass + bigMass.mass);
+      bigMass.speed = (bigMass.mass * v2 + smallMass.mass * (2 * v1 - v2)) / (smallMass.mass + bigMass.mass);
+    }
 
-  smallMass.pos.x += smallMass.speed / 10.0f;
-  bigMass.pos.x += bigMass.speed / 10.0f;
-  tmp_pos_x += bigMass.speed / 10.0f;
+    smallMass.pos.x += smallMass.speed / 10.0f;
+    bigMass.pos.x += bigMass.speed / 10.0f;
+    tmp_pos_x += bigMass.speed / 10.0f;
 
-  if(smallMass.pos.x < 0)
-  {
-    smallMass.pos.x = 0.0f;
-    if(tmp_pos_x <= smallMass.size.x) bigMass.pos.x = smallMass.size.x;
+    if(smallMass.pos.x < 0)
+    {
+      smallMass.pos.x = 0.0f;
+      if(tmp_pos_x <= smallMass.size.x) bigMass.pos.x = smallMass.size.x;
+    }
   }
 
   sprintf(tmp_str, "Kollisionen: %d", collisions);
   tmp_surface = TTF_RenderUTF8_Blended(font, tmp_str, iSDL_Color(128, 255, 128, 255));
   collisionCounter = SDL_CreateTextureFromSurface(renderer, tmp_surface);
 
-  sprintf(tmp_str, "Geschw. Blau: %02f", smallMass.speed);
+  sprintf(tmp_str, "Geschw. Blau: %02fm/s", smallMass.speed * timeSteps);
   tmp_surface = TTF_RenderUTF8_Blended(font, tmp_str, iSDL_Color(128, 128, 255, 255));
   smallMassSpeedText = SDL_CreateTextureFromSurface(renderer, tmp_surface);
 
-  sprintf(tmp_str, "Geschw. Rot: %02f", bigMass.speed);
+  sprintf(tmp_str, "Geschw. Rot: %02fm/s", bigMass.speed * timeSteps);
   tmp_surface = TTF_RenderUTF8_Blended(font, tmp_str, iSDL_Color(255, 128, 128, 255));
   bigMassSpeedText = SDL_CreateTextureFromSurface(renderer, tmp_surface);
 
-  sprintf(tmp_str, "Distanz: %02f", bigMass.pos.x - (smallMass.pos.x + smallMass.size.x));
+  sprintf(tmp_str, "Distanz: %02fpx", bigMass.pos.x - (smallMass.pos.x + smallMass.size.x));
   tmp_surface = TTF_RenderUTF8_Blended(font, tmp_str, fg);
   distanceText = SDL_CreateTextureFromSurface(renderer, tmp_surface);
 
@@ -194,9 +201,9 @@ void draw()
 
 int main(int argc, char* argv[])
 {
-  if(argc < 4)
+  if(argc < 5)
   {
-   printf("Nutzung: ./bin/pi [MODUS] [ARG] [GESCHW]\n\nModi: -pi     ARG wird zur Anzahl der Nachkommastellen\n      -m      ARG wird zur Masse in kg\nGeschwindigkeit: wird in m/s angegeben\n");
+   printf("Nutzung: ./bin/pi [MODUS] [ARG] [GESCHW] [SCHRITTE]\n\nModi: -pi     ARG wird zur Anzahl der Nachkommastellen\n      -m      ARG wird zur Masse in kg\nGeschwindigkeit: wird in m/s angegeben\nSchritte: Anzahl der Berechnungen pro ms\n");
    return 0;
   }
 
@@ -214,7 +221,7 @@ int main(int argc, char* argv[])
     return 0;
   }
 
-  init(argument, std::atof(argv[3]));
+  init(argument, std::atof(argv[3]), std::stoi(argv[4]));
   
   while(!quit)
   {

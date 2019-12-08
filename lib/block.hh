@@ -7,12 +7,12 @@ class Block
 {
 public:
   long int mass;
-  float speed = 0.0f;
-  Vec2f pos;
+  double speed = 0.0f;
+  Vec2d pos;
   Vec2 size;
 
   Block() { }
-  Block(long int iMass, Vec2f iPos, Vec2 iSize) // Mass in kg
+  Block(long int iMass, Vec2d iPos, Vec2 iSize) // Mass in kg
   {
     mass = iMass;
     pos = iPos;

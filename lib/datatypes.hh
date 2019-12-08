@@ -16,13 +16,13 @@ struct Vec2
   }
 };
 
-struct Vec2f
+struct Vec2d
 {
-  float x;
-  float y;
+  double x;
+  double y;
 
-  Vec2f() { }
-  Vec2f(float iX, float iY)
+  Vec2d() { }
+  Vec2d(double iX, double iY)
   {
     x = iX;
     y = iY;
