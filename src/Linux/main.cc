@@ -8,9 +8,9 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 
-#include "../lib/datatypes.hh"
-#include "../lib/block.hh"
-#include "../lib/var.hh"
+#include "../../lib/datatypes.hh"
+#include "../../lib/block.hh"
+#include "../../lib/var.hh"
 
 SDL_Window* window;
 SDL_Renderer* renderer;
